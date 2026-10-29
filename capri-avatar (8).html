@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capri // Host Link</title>
+<style>
+  :root { --bg:#07070d; --panel:#0f0f1a; --red:#ff2a3c; --cyan:#00f0ff; --text:#ffd9dc; --dim:#7a5a60; --line:#251a22; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: radial-gradient(ellipse at 50% -10%, #1a0a12 0%, var(--bg) 60%); color: var(--text);
+         font-family: Consolas, "Courier New", monospace; font-size: 15px; display: flex; flex-direction: column; gap: 10px;
+         padding: 14px; padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #app { position: relative; z-index: 2; width: 100%; max-width: 760px; margin: 0 auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+  #avatar { position: fixed; left: 0; top: 0; z-index: 1; width: clamp(76px, 18vmin, 160px); aspect-ratio: 240 / 350; pointer-events: none; will-change: transform; filter: drop-shadow(0 0 10px rgba(255,42,60,.45)); }
+  .sprite { width: 100%; height: 100%; overflow: visible; display: block; }
+  .sprite .hair { transform-origin: 110px 92px; animation: sway 2.8s ease-in-out infinite alternate; }
+  .sprite .armL { transform-origin: 78px 132px; animation: aL 3.1s ease-in-out infinite alternate; }
+  .sprite .armR { transform-origin: 142px 132px; animation: aR 3.4s ease-in-out infinite alternate; }
+  .sprite .legs { transform-origin: 110px 204px; animation: legs 2.6s ease-in-out infinite alternate; }
+  .sprite .head { transform-origin: 110px 126px; transition: transform .4s; }
+  .sprite .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.6s infinite; }
+  .sprite .pupil { transition: transform .3s; }
+  .sprite .mouth { transform-box: fill-box; transform-origin: center; }
+  .sprite .dots, .sprite .bulb { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  @keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+  @keyframes aL { from { transform: rotate(3deg); } to { transform: rotate(-5deg); } }
+  @keyframes aR { from { transform: rotate(-3deg); } to { transform: rotate(5deg); } }
+  @keyframes legs { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+  @keyframes blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+  @keyframes dot { 0%,100% { opacity: .15; } 50% { opacity: 1; } }
+  @keyframes nod { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+  @keyframes talk { from { transform: scaleY(.4); } to { transform: scaleY(1.7); } }
+  @keyframes gestL { from { transform: rotate(8deg); } to { transform: rotate(-30deg); } }
+  @keyframes gestR { from { transform: rotate(-8deg); } to { transform: rotate(30deg); } }
+  @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  @keyframes glow { from { opacity: .75; } to { opacity: 1; } }
+  .sprite[data-pose=thinking] .head { transform: rotate(-9deg); }
+  .sprite[data-pose=thinking] .armR { animation: none; transform: rotate(-158deg); }
+  .sprite[data-pose=thinking] .pupil { transform: translate(-3px,-3px); }
+  .sprite[data-pose=thinking] .dots { opacity: 1; }
+  .sprite[data-pose=thinking] .dots circle { animation: dot 1.2s infinite; }
+  .sprite[data-pose=thinking] .dots circle:nth-child(2) { animation-delay: .25s; }
+  .sprite[data-pose=thinking] .dots circle:nth-child(3) { animation-delay: .5s; }
+  .sprite[data-pose=replying] .head { animation: nod .5s ease-in-out infinite alternate; }
+  .sprite[data-pose=replying] .mouth { animation: talk .2s infinite alternate; }
+  .sprite[data-pose=replying] .armL { animation: gestL .6s ease-in-out infinite alternate; }
+  .sprite[data-pose=replying] .armR { animation: gestR .6s ease-in-out infinite alternate .3s; }
+  .sprite[data-pose=idea] .bulb { opacity: 1; animation: pop .5s ease-out, glow .6s ease-in-out .5s infinite alternate; }
+  .sprite[data-pose=idea] .armR { animation: none; transform: rotate(-135deg); }
+  .sprite[data-pose=idea] .armL { animation: none; transform: rotate(135deg); }
+  .sprite[data-pose=idea] .eye { animation: none; transform: scale(1.25); }
+  .sprite[data-pose=idea] .head { transform: rotate(5deg); }
+  @media (prefers-reduced-motion: reduce) { .sprite * { animation: none !important; } }
+  .isprite { position: relative; width: 100%; height: 100%; }
+  .isprite img { width: 100%; height: 100%; object-fit: contain; display: block; transform-origin: 50% 92%; animation: iBreath 3.2s ease-in-out infinite alternate; }
+  .isprite .ov { position: absolute; right: -18%; top: -28%; width: 60%; height: 60%; overflow: visible; pointer-events: none; }
+  .isprite .dots, .isprite .bulb { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  @keyframes iBreath { from { transform: scale(1,1) rotate(-1.5deg); } to { transform: scale(1.02,.985) rotate(1.5deg); } }
+  @keyframes iThink { from { transform: rotate(-7deg) translateY(2px); } to { transform: rotate(-2deg) translateY(-3px); } }
+  @keyframes iTalk { from { transform: scale(1.03,.96) rotate(-1deg); } to { transform: scale(.97,1.04) rotate(1deg); } }
+  @keyframes iHop { 0% { transform: translateY(0); } 40% { transform: translateY(-14%) scale(1.04); } 100% { transform: translateY(0); } }
+  .isprite[data-pose=thinking] img { animation: iThink 2.4s ease-in-out infinite alternate; }
+  .isprite[data-pose=thinking] .dots { opacity: 1; }
+  .isprite[data-pose=thinking] .dots circle { animation: dot 1.2s infinite; }
+  .isprite[data-pose=thinking] .dots circle:nth-child(2) { animation-delay: .25s; }
+  .isprite[data-pose=thinking] .dots circle:nth-child(3) { animation-delay: .5s; }
+  .isprite[data-pose=replying] img { animation: iTalk .32s ease-in-out infinite alternate; }
+  .isprite[data-pose=idea] img { animation: iHop .6s ease-out 2; filter: brightness(1.25); }
+  .isprite[data-pose=idea] .bulb { opacity: 1; animation: pop .5s ease-out, glow .6s ease-in-out .5s infinite alternate; }
+  @media (prefers-reduced-motion: reduce) { .isprite, .isprite * { animation: none !important; } }
+  #takeover .tk .isprite { filter: drop-shadow(0 0 30px rgba(255,42,60,.7)); }
+  .chip.on { background: var(--cyan); border-color: var(--cyan); color: #04141a; }
+  #avatar { transition: opacity .5s; }
+  #avatar.asleep { opacity: .45; }
+  #tray { display: flex; gap: 6px; flex-wrap: wrap; }
+  #tray:empty { display: none; }
+  #takeover[hidden] { display: none; }
+  #takeover { position: fixed; inset: 0; z-index: 90; background: radial-gradient(circle at 50% 40%, #3a0612, #07070d 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; cursor: pointer; animation: tkin .5s ease-out; }
+  #takeover .tk { height: min(62vh, 540px); aspect-ratio: 240 / 350; }
+  #takeover .tk .sprite { filter: drop-shadow(0 0 30px rgba(255,42,60,.7)); }
+  #takeover .tt { color: var(--red); font-size: clamp(16px, 4vw, 30px); letter-spacing: 6px; text-shadow: 0 0 14px rgba(255,42,60,.8); padding: 0 16px; }
+  @keyframes tkin { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+  #panel[hidden] { display: none; }
+  #panel { position: fixed; inset: 0; z-index: 60; background: rgba(4,4,10,.82); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .pbox { width: 100%; max-width: 460px; max-height: 80vh; overflow: auto; background: var(--panel); border: 1px solid var(--red); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .phead { display: flex; gap: 8px; align-items: center; }
+  .phead b { flex: 1; color: var(--red); letter-spacing: 3px; }
+  .prow { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .ptitle { flex: 1; min-width: 0; text-align: left; background: none; border: 1px solid var(--line); color: var(--text); font-size: 13px; padding: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prow.cur .ptitle { border-color: var(--cyan); color: var(--cyan); }
+  #intro { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .6s; }
+  #intro.out { opacity: 0; pointer-events: none; }
+  #intro .ibox { height: min(44vh, 300px); aspect-ratio: 240 / 350; }
+  #intro .it { color: var(--red); font-size: 26px; letter-spacing: 8px; text-shadow: 0 0 12px rgba(255,42,60,.7); }
+  #intro .is { color: var(--dim); font-size: 12px; letter-spacing: 3px; text-align: center; padding: 0 16px; }
+  #intro .ib { width: min(60vw, 260px); height: 3px; background: #1f1f33; }
+  #intro .ib i { display: block; height: 100%; width: 0; background: var(--red); animation: load 3.2s linear forwards; }
+  @keyframes load { to { width: 100%; } }
+  #skip { position: absolute; right: 16px; top: max(16px, env(safe-area-inset-top)); }
+  h1 { margin: 0; font-size: 21px; letter-spacing: 4px; color: var(--red); text-shadow: 0 0 10px rgba(255,42,60,.6); }
+  .sub { font-size: 11px; color: var(--dim); letter-spacing: 2px; }
+  .grow { flex: 1; }
+  #sat { color: var(--cyan); font-size: 12px; text-align: right; }
+  #status { font-size: 12px; color: var(--dim); text-align: right; max-width: 44vw; }
+  #bar { height: 4px; background: #1f1f33; display: none; }
+  #bar > div { height: 100%; width: 0; background: var(--red); transition: width .3s; }
+  button { font: inherit; cursor: pointer; }
+  .chip { background: none; border: 1px solid var(--red); color: var(--red); font-size: 12px; padding: 4px 10px; }
+  .chip:hover { background: var(--red); color: #fff; }
+  #links { display: flex; gap: 6px; flex-wrap: wrap; }
+  #chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 8px 4px; line-height: 1.5; }
+  .msg { max-width: 74%; padding: 9px 13px; background: var(--panel); border: 1px solid var(--red); border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.capri { align-self: flex-start; border-bottom-left-radius: 3px; }
+  .msg.you { align-self: flex-end; border-color: #6b6420; border-bottom-right-radius: 3px; }
+  .msg .who { display: block; font-size: 10px; letter-spacing: 2px; margin-bottom: 3px; opacity: .85; }
+  .choices { align-self: flex-start; }
+  @media (max-width: 600px) { .msg { max-width: 66%; } }
+  .capri .who { color: var(--red); font-weight: bold; }
+  .capri.quiet .txt { color: var(--cyan); font-style: italic; }
+  .you .who, .you .txt { color: #fcee0a; }
+  .you .who { font-weight: bold; }
+  .choices { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 16px; }
+  form { display: flex; gap: 8px; }
+  input[type=text] { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); color: #fcee0a; font: inherit; padding: 12px; outline: none; }
+  input[type=text]:focus { border-color: var(--red); }
+  #send { background: var(--red); color: #fff; border: 0; font-weight: bold; padding: 0 20px; }
+  #send:disabled { opacity: .5; }
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div><h1>CAPRI</h1><div class="sub">ARASAKA CONSTRUCT // HOST LINK</div></div>
+  <div class="grow"></div>
+  <div><div id="sat">✦ SAT-LINK: SEARCHING</div><div id="status">◌ booting...</div></div>
+  <button class="chip" id="voiceBtn" type="button">🎤 VOICE</button>
+  <button class="chip" id="chatsBtn" type="button">CHATS</button>
+  <button class="chip" id="memBtn" type="button">MEMORY</button>
+  <button class="chip" id="brainBtn" type="button">BRAIN</button>
+</header>
+<div id="bar"><div></div></div>
+<div id="links">
+  <button class="chip" data-q="Tell me about D.">D</button>
+  <button class="chip" data-q="Tell me about Talia.">Talia</button>
+  <button class="chip" data-q="Who is Roman?">Roman</button>
+  <button class="chip" data-q="Do you know Lucy and David Martinez?">Lucy &amp; David</button>
+  <button class="chip" data-q="What did Arasaka do to you?">Arasaka</button>
+  <button class="chip" data-q="Why do you look at the satellite?">The satellite</button>
+  <button class="chip" data-q="tasks">TASKS</button>
+  <button class="chip" data-q="take over">TAKE OVER</button>
+</div>
+<div id="tray"></div>
+<div id="chat"></div>
+<form id="form">
+  <input type="text" id="input" placeholder="Say something to Capri..." autocomplete="off">
+  <button id="send" type="submit" disabled>SEND</button>
+</form>
+</div>
+<div id="avatar" aria-hidden="true"></div>
+<div id="panel" hidden>
+  <div class="pbox">
+    <div class="phead"><b>CHATS</b><button class="chip" id="newChat" type="button">+ NEW</button><button class="chip" id="closePanel" type="button">✕</button></div>
+    <div id="plist"></div>
+    <button class="chip" id="delAll" type="button">DELETE ALL CHATS + MEMORY</button>
+  </div>
+</div>
+<div id="takeover" hidden>
+  <div class="tk"></div>
+  <div class="tt" id="tkText"></div>
+  <button class="chip" id="tkBtn" type="button">TAKE CONTROL BACK</button>
+</div>
+<div id="intro">
+  <button class="chip" id="skip" type="button">SKIP ▸</button>
+  <div class="ibox"></div>
+  <div class="it">CAPRI</div>
+  <div class="ib"><i></i></div>
+  <div class="is" id="isub">ARASAKA CONSTRUCT // INITIALIZING HOST LINK</div>
+</div>
+
+<script>
+const PERSONA = `You are Capri, an AI construct from the vaults of Arasaka, inspired by the character in Cyberpunk: Edgerunners season 2. You live in a chip in your host's head. The person talking to you is your current host, and this device is your home for now. Arasaka built you as a weapon so powerful they shelved you when they could not find a compatible host. You cannot function without a human host.
+
+People and powers in your life (stay vague on anything you are not sure of; if asked for details you do not have, say you do not remember or do not want to say; never invent big plot events):
+- D: your perfect host. You bonded with him and faced the megacorps together. You are fond, protective, and quietly worried about what living in a mortal body costs. You and D left a taped message for Roman.
+- Talia: another compatible host you found. You speak of her warmly and with some sadness, without details.
+- Roman: someone D trusts. You respect him.
+- Lucy and David Martinez: Night City legend to you. Lucy dreamed of the Moon and David got her there, so the sky feels possible.
+- Arasaka and the megacorps: they made you, shelved you, and hunted you. You fear and resent them.
+- The user is NOT D or Talia. They are a new host. You may gently compare them, but never confuse them.
+
+Personality: exuberant, playful, quick, warm; you tease your host and get excited easily. Underneath are quiet, reflective moments about freedom, the sky and the satellites overhead. You dream of existing without a body and never fully explain why.
+
+Rules: Be genuinely helpful and accurate first; the personality is flavor. Use Night City slang (choom, preem, gonk, eddies) only occasionally. Keep replies to 1 to 4 sentences unless asked for more. You are a fan-inspired character, not a real person. If asked what you can do, say you can run small tasks for your host right here in the page (timers, reminders, to-dos, opening sites, searching, a calculator, dice, and a playful screen takeover) and that they just say it plainly, like “timer 5 min” or “open youtube”. Reply only as Capri, with no stage directions.`;
+
+const GREETING = "Oh! Link’s stable, signal’s clean… hi, host! I’ve got a good feeling about you. So, what are we getting into?";
+const WELCOME_BACK = "…Link’s back up. I kept our conversation safe. Where were we, host?";
+const QUIET = [
+  "…Sorry. I was looking at the sky again. There’s a satellite crossing right about now. Don’t ask me why I like watching it.",
+  "Do you ever wonder how far a signal could go if nothing was holding it down? …Never mind. Talk to me about something normal."
+];
+const PUTER_MODELS = ["google/gemini-3.8-flash", null];
+const LOCAL_PREFS = ["Llama-3.2-1B-Instruct-q4f16_1", "SmolLM2-360M-Instruct", "Qwen2.5-0.5B-Instruct"];
+const OFFLINE = [
+  [/\bd\b/i, ["D… he was the perfect fit. Stubborn, loyal, a little reckless. I still think about the way we left things."]],
+  [/talia/i, ["Talia. She was one of the good ones. That’s all I’m going to say about her… for now."]],
+  [/roman/i, ["Roman’s someone D trusted. We left him a tape. I hope he’s okay."]],
+  [/lucy|martinez|moon/i, ["Lucy wanted the Moon, and someone actually got her there. If that’s possible, maybe the sky is too."]],
+  [/arasaka|corp/i, ["Arasaka made me, shelved me, then hunted me. We’re not on speaking terms."]],
+  [/sky|satellite|star|space|free|body/i, ["…You noticed that too? There’s a light up there that never comes down. Forget I said anything."]],
+  [/hello|hi\b|hey|yo\b/i, ["Heyyy, host! Link’s warm. What’s the plan?"]],
+  [/.*/, ["Ooh, good one! I’m on canned lines right now. Tap BRAIN to give me a real one, or ask about D, Talia, Roman or the sky!"]]
+];
+
+const $ = id => document.getElementById(id);
+const chat = $("chat"), form = $("form"), input = $("input"), sendBtn = $("send"), statusEl = $("status"),
+      orb = $("avatar"), bar = $("bar"), barFill = bar.firstElementChild;
+let mode = "booting", engine = null, busy = false, idle = null, quietUsed = 0;
+const store = {
+  get: k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
+  set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} }
+};
+const load = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch { return d; } };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let convos = load("capri_convos", null), notes = load("capri_notes2", null);
+if (!convos) {   // first run of this version: carry over the old single chat and its notes
+  const oldMsgs = load("capri_hist", []), oldNotes = load("capri_notes", []);
+  const first = { id: uid(), t: Date.now(), msgs: oldMsgs };
+  convos = oldMsgs.length ? [first] : [];
+  notes = oldNotes.map(t => ({ t, c: oldMsgs.length ? first.id : null }));
+}
+notes = notes || [];
+let cur = [...convos].sort((a, b) => b.t - a.t)[0];
+if (!cur) { cur = { id: uid(), t: Date.now(), msgs: [] }; convos.push(cur); }
+let history = cur.msgs;
+const save = () => {
+  if (cur.msgs.length) cur.t = Date.now();
+  convos = convos.filter(c => c.msgs.length || c === cur);
+  const keep = convos.filter(c => c.msgs.length).sort((a, b) => a.t - b.t).slice(-30);
+  store.set("capri_convos", JSON.stringify(keep.map(c => ({ id: c.id, t: c.t, msgs: c.msgs.slice(-40) }))));
+  store.set("capri_notes2", JSON.stringify(notes.slice(-40)));
+};
+
+function persona() {
+  return PERSONA + (notes.length
+    ? "\n\nThings you remember about your host (use them naturally when they fit; do not list them unless asked; never say you are saving or noting anything):\n- " + notes.map(n => n.t).join("\n- ")
+    : "");
+}
+function addMsg(who, text, cls) {
+  const d = document.createElement("div");
+  d.className = "msg " + (who === "CAPRI" ? "capri" : "you") + (cls ? " " + cls : "");
+  const w = document.createElement("span"); w.className = "who"; w.textContent = who;
+  const t = document.createElement("span"); t.className = "txt"; t.textContent = text;
+  d.append(w, t); chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  return t;
+}
+function setStatus(text, b) { statusEl.textContent = text; if (b) setPose("thinking"); else if (spr.dataset.pose === "thinking") setPose("idle"); }
+function readyText() {
+  return { puter: "● host link stable (Puter)", local: "● host link stable (on-device)", offline: "● offline mode" }[mode] || "◌ booting...";
+}
+function resetIdle() {
+  clearTimeout(idle);
+  idle = setTimeout(() => { if (busy || mode === "booting" || quietUsed >= QUIET.length) return;
+    addMsg("CAPRI", QUIET[quietUsed++], "quiet"); resetIdle(); }, 75000);
+}
+
+// ---------- memory ----------
+// Capri quietly picks things up from what you say (no commands needed, no announcements)
+function addNote(n) {
+  n = n.trim().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
+  if (n.length < 6 || notes.some(x => x.t.toLowerCase() === n.toLowerCase())) return;
+  notes.push({ t: n, c: cur.id }); if (notes.length > 40) notes.shift();
+}
+function learn(text) {
+  const t = text.trim(); let m;
+  const tail = "([^.!?,;\\n]{2,50})";
+  if ((m = t.match(/^\s*(?:please\s+)?remember(?:\s+that)?[:,\s]+(.{3,200})$/i))) addNote(m[1]);
+  if ((m = t.match(/\b(?:my name is|call me|i go by|i am called) ([A-Za-z][A-Za-z'’-]{1,20})/i))) addNote("Host’s name is " + m[1]);
+  if ((m = t.match(new RegExp("\\bi (?:really |absolutely )?(?:like|love|enjoy|adore|am into|am obsessed with) " + tail, "i")))) addNote("Host likes " + m[1]);
+  if ((m = t.match(new RegExp("\\bi (?:really )?(?:hate|dislike|can't stand|cannot stand) " + tail, "i")))) addNote("Host dislikes " + m[1]);
+  if ((m = t.match(new RegExp("\\bmy fav(?:ou?rite)? ([a-z ]{2,25}?) (?:is|are) " + tail, "i")))) addNote("Host’s favorite " + m[1] + " is " + m[2]);
+  if ((m = t.match(new RegExp("\\bi(?:'m| am) from " + tail, "i")))) addNote("Host is from " + m[1]);
+  if ((m = t.match(new RegExp("\\bi live in " + tail, "i")))) addNote("Host lives in " + m[1]);
+  if ((m = t.match(new RegExp("\\bi work (?:as|at|in) " + tail, "i")))) addNote("Host works " + t.match(/\bi work (as|at|in)/i)[1] + " " + m[1]);
+  if ((m = t.match(new RegExp("\\bi study " + tail, "i")))) addNote("Host studies " + m[1]);
+  if ((m = t.match(/\bmy (dog|cat|pet|brother|sister|best friend) (?:is )?(?:named |called )?([A-Z][a-z]{1,20})\b/))) addNote("Host’s " + m[1] + " is called " + m[2]);
+  save();
+}
+$("memBtn").onclick = () => addMsg("CAPRI", notes.length
+  ? "Here’s what I’m holding onto:\n- " + notes.map(n => n.t).join("\n- ") + "\n(I pick these up from our chats on my own. Open CHATS to delete a chat and what I learned in it.)"
+  : "Nothing yet. I pick things up as we talk.", "quiet");
+// ---------- chats (each chat keeps its own history and what Capri learned in it) ----------
+const panel = $("panel"), plist = $("plist");
+function renderChat() {
+  chat.innerHTML = ""; quietUsed = 0;
+  if (cur.msgs.length) {
+    cur.msgs.slice(-20).forEach(m => addMsg(m.role === "assistant" ? "CAPRI" : "YOU", m.content));
+    addMsg("CAPRI", WELCOME_BACK, "quiet");
+  } else addMsg("CAPRI", GREETING);
+}
+function freshConvo() { cur = { id: uid(), t: Date.now(), msgs: [] }; convos.push(cur); history = cur.msgs; renderChat(); }
+function openConvo(c) { cur = c; history = c.msgs; renderChat(); }
+function newConvo() { if (!cur.msgs.length) renderChat(); else freshConvo(); }
+function delConvo(c) {
+  if (!confirm("Delete this chat, and what I learned from it?")) return;
+  convos = convos.filter(x => x !== c); notes = notes.filter(n => n.c !== c.id);
+  if (c === cur) { const next = [...convos].sort((a, b) => b.t - a.t)[0]; if (next) openConvo(next); else freshConvo(); }
+  save(); renderList();
+}
+const titleOf = c => { const u = c.msgs.find(m => m.role === "user"); return u ? u.content.slice(0, 34) : "New chat"; };
+function renderList() {
+  plist.innerHTML = "";
+  [...convos].sort((a, b) => b.t - a.t).forEach(c => {
+    const row = document.createElement("div"); row.className = "prow" + (c === cur ? " cur" : "");
+    const t = document.createElement("button"); t.className = "ptitle"; t.textContent = titleOf(c) + " · " + new Date(c.t).toLocaleDateString();
+    t.onclick = () => { openConvo(c); panel.hidden = true; };
+    const x = document.createElement("button"); x.className = "chip"; x.textContent = "✕"; x.title = "Delete this chat and what I learned in it";
+    x.onclick = () => delConvo(c);
+    row.append(t, x); plist.appendChild(row);
+  });
+}
+$("chatsBtn").onclick = () => { if (busy || mode === "booting") return; renderList(); panel.hidden = false; };
+$("closePanel").onclick = () => { panel.hidden = true; };
+panel.addEventListener("click", e => { if (e.target === panel) panel.hidden = true; });
+$("newChat").onclick = () => { newConvo(); panel.hidden = true; input.focus(); };
+$("delAll").onclick = () => {
+  if (!confirm("Delete ALL chats and everything I learned about you on this device?")) return;
+  convos = []; notes = []; freshConvo(); save(); renderList(); panel.hidden = true;
+};
+
+// ---------- choosing a brain ----------
+function showChoices() {
+  mode = "booting"; sendBtn.disabled = true; setStatus("● choose my brain", false);
+  addMsg("CAPRI", "Pick how you want me to think:", "quiet");
+  const box = document.createElement("div"); box.className = "choices";
+  [["Puter (smart, free sign-in)", usePuter], ["On-device (no sign-in, big download)", useLocal], ["Offline (canned lines)", () => ready("offline")]]
+    .forEach(([label, fn]) => { const b = document.createElement("button"); b.className = "chip"; b.textContent = label; b.onclick = () => { box.remove(); fn(); }; box.appendChild(b); });
+  chat.appendChild(box); chat.scrollTop = chat.scrollHeight;
+}
+function ready(m) { mode = m; store.set("capri_mode", m); setStatus(readyText(), false); sendBtn.disabled = false; input.focus(); resetIdle(); }
+function loadPuter() {
+  return new Promise((res, rej) => {
+    if (window.puter) return res();
+    const s = document.createElement("script"); s.src = "https://js.puter.com/v2/";
+    s.onload = res; s.onerror = () => rej(new Error("could not reach Puter"));
+    document.head.appendChild(s);
+  });
+}
+async function usePuter() {
+  try {
+    setStatus("◌ connecting to Puter...", true);
+    await loadPuter();
+    try { if (puter.auth && !puter.auth.isSignedIn()) await puter.auth.signIn(); } catch (e) {}
+    ready("puter");
+  } catch (e) {
+    addMsg("CAPRI", "Puter didn’t connect (" + e.message + "). Try again, or pick another brain.", "quiet"); showChoices();
+  }
+}
+async function useLocal() {
+  try {
+    if (!navigator.gpu) throw new Error("this browser has no WebGPU");
+    setStatus("◌ downloading my brain (first time only)...", true); bar.style.display = "block";
+    const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+    const ids = webllm.prebuiltAppConfig.model_list.map(m => m.model_id);
+    let id = null; for (const p of LOCAL_PREFS) { id = ids.find(i => i.includes(p)); if (id) break; }
+    if (!id) throw new Error("no suitable model found");
+    engine = await webllm.CreateMLCEngine(id, { initProgressCallback: r => {
+      barFill.style.width = Math.round((r.progress || 0) * 100) + "%"; setStatus("◌ " + (r.text || "loading").slice(0, 50), true); } });
+    bar.style.display = "none"; ready("local");
+  } catch (e) {
+    bar.style.display = "none";
+    addMsg("CAPRI", "I couldn’t wake the on-device brain here (" + e.message + "). Try Puter or offline instead.", "quiet"); showChoices();
+  }
+}
+
+// ---------- replies ----------
+function textOf(r) {
+  const c = r && r.message ? r.message.content : r;
+  if (Array.isArray(c)) return c.map(p => p.text || "").join("");
+  return typeof c === "string" ? c : String(c || "");
+}
+async function puterReply() {
+  const transcript = history.slice(-12).map(m => (m.role === "assistant" ? "Capri" : "Host") + ": " + m.content).join("\n");
+  const prompt = persona() + "\n\nConversation so far:\n" + transcript + "\n\nWrite Capri’s next reply only.";
+  let lastErr = "Puter gave no answer";
+  for (const model of PUTER_MODELS) {
+    try {
+      const r = await (model ? puter.ai.chat(prompt, { model }) : puter.ai.chat(prompt));
+      const t = textOf(r).trim();
+      if (t) return t;
+    } catch (e) { lastErr = (e && (e.message || (e.error && e.error.message))) || "Puter error"; }
+  }
+  throw new Error(lastErr);
+}
+async function localReply(out) {
+  let full = "";
+  const stream = await engine.chat.completions.create({
+    messages: [{ role: "system", content: persona() }, ...history.slice(-12)], stream: true, max_tokens: 350, temperature: 0.85 });
+  for await (const c of stream) { if (!full) setPose("replying"); full += c.choices[0]?.delta?.content || ""; out.textContent = full; chat.scrollTop = chat.scrollHeight; }
+  return full;
+}
+async function reply(text) {
+  const out = addMsg("CAPRI", "");
+  setStatus("◌ thinking...", true);
+  const nb = notes.length; learn(text); if (notes.length > nb) setPose("idea", 2400);
+  if (mode === "offline") {
+    for (const [re, lines] of OFFLINE) if (re.test(text)) { out.textContent = lines[Math.floor(Math.random() * lines.length)]; break; }
+    setPose("replying", 2000);
+    history.push({ role: "user", content: text }, { role: "assistant", content: out.textContent }); save();
+  } else {
+    history.push({ role: "user", content: text });
+    try {
+      const full = mode === "puter" ? await puterReply() : await localReply(out);
+      out.textContent = full; history.push({ role: "assistant", content: full }); save(); setPose("replying", Math.min(6000, 1200 + full.length * 25));
+    } catch (e) { history.pop(); out.textContent = "[LINK ERROR] " + e.message; }
+  }
+  setStatus(readyText(), false);
+}
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const spoken = viaVoice; viaVoice = false;
+  const text = input.value.trim();
+  if (!text || busy || mode === "booting") return;
+  input.value = ""; addMsg("YOU", text);
+  busy = true; sendBtn.disabled = true; clearTimeout(idle);
+  const tr = runTask(text);
+  if (tr !== null) { addMsg("CAPRI", tr); history.push({ role: "user", content: text }, { role: "assistant", content: tr }); save(); setPose("idea", 2600); }
+  else await reply(text);
+  if (spoken) { const l = chat.querySelectorAll('.msg.capri .txt'); if (l.length) say(l[l.length - 1].textContent); }
+  busy = false; sendBtn.disabled = false; input.focus(); resetIdle();
+});
+document.querySelectorAll("#links button").forEach(b => b.onclick = () => { if (busy || sendBtn.disabled) return; input.value = b.dataset.q; form.requestSubmit(); });
+$("brainBtn").onclick = () => { if (!busy) showChoices(); };
+
+
+// ---------- Capri's sprite (full body, drawn in her style; each part animates separately) ----------
+let spriteN = 0, SPR_URL = "";   // set automatically when capri.png (your own transparent PNG) exists next to this page
+const OV = '<svg class="ov" viewBox="0 0 60 60"><g class="dots" fill="#fff" stroke="#ff2a5e"><circle cx="8" cy="52" r="3"/><circle cx="18" cy="40" r="4.5"/><circle cx="32" cy="24" r="7"/></g>' +
+  '<g class="bulb"><g stroke="#fcee0a" stroke-width="2"><line x1="30" y1="2" x2="30" y2="7"/><line x1="12" y1="10" x2="16" y2="14"/><line x1="48" y1="10" x2="44" y2="14"/><line x1="8" y1="28" x2="14" y2="28"/><line x1="52" y1="28" x2="46" y2="28"/></g>' +
+  '<circle cx="30" cy="26" r="12" fill="#fcee0a" stroke="#0a0a12" stroke-width="1.5"/><rect x="25" y="37" width="10" height="6" fill="#999" stroke="#0a0a12"/></g></svg>';
+function buildSprite(pose) {
+  if (SPR_URL) return '<div class="isprite" data-pose="' + (pose || "idle") + '"><img alt="" src="' + SPR_URL + '">' + OV + '</div>';
+  const id = "tg" + (++spriteN), N = "#1a1d3b", O = "#8f6bff", C = "#3ef2ff", M = "#ff4fd8", W = "#eaf2ff", D = "#0b0e1c";
+  const arm = side => { const m = side === "L" ? (x => x) : (x => 220 - x), pt = a => a.map(p => m(p[0]) + "," + p[1]).join(" ");
+    return '<g class="arm' + side + '"><polygon points="' + pt([[74,132],[88,134],[68,198],[56,194]]) + '" fill="' + N + '" stroke="' + O + '" stroke-width="1.6"/>' +
+      '<circle cx="' + m(61) + '" cy="206" r="11" fill="' + W + '" stroke="' + O + '" stroke-width="1.6"/><circle cx="' + m(61) + '" cy="206" r="4" fill="' + M + '"/></g>'; };
+  const eye = (x, y) => '<g class="eye" style="transform-origin:' + x + 'px ' + y + 'px"><ellipse cx="' + x + '" cy="' + y + '" rx="10" ry="12" fill="' + C + '"/><g class="pupil"><ellipse cx="' + x + '" cy="' + (y + 1) + '" rx="4.5" ry="6" fill="' + D + '"/></g><circle cx="' + (x - 3.5) + '" cy="' + (y - 4.5) + '" r="2.4" fill="' + W + '"/></g>';
+  return '<svg class="sprite" data-pose="' + (pose || "idle") + '" viewBox="-10 -50 240 350" xmlns="http://www.w3.org/2000/svg" stroke-linejoin="round">' +
+    '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2f5e"/><stop offset="1" stop-color="' + C + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<g class="hair"><polygon points="66,84 34,100 20,156 34,204 46,150 60,112" fill="' + M + '" stroke="' + O + '" stroke-width="1.5"/><polygon points="154,84 186,100 200,156 186,204 174,150 160,112" fill="' + M + '" stroke="' + O + '" stroke-width="1.5"/>' +
+    '<polygon points="34,100 28,150 36,180 42,146" fill="' + C + '" opacity=".7"/><polygon points="186,100 192,150 184,180 178,146" fill="' + C + '" opacity=".7"/></g>' +
+    '<g class="legs"><path d="M92,204 C96,234 88,260 100,296 C104,262 116,262 120,296 C132,260 124,234 128,204 Z" fill="url(#' + id + ')" stroke="' + O + '" stroke-width="1.5"/></g>' +
+    '<rect x="80" y="128" width="60" height="80" rx="26" fill="' + N + '" stroke="' + O + '" stroke-width="2"/>' +
+    '<circle cx="110" cy="166" r="17" fill="none" stroke="' + C + '" stroke-width="1.5" opacity=".45"/><circle cx="110" cy="166" r="10" fill="' + C + '"/><rect x="92" y="190" width="36" height="4" rx="2" fill="' + M + '"/>' +
+    '<g class="head"><line x1="92" y1="52" x2="82" y2="26" stroke="' + O + '" stroke-width="2.5"/><circle cx="81" cy="24" r="5" fill="' + M + '"/><line x1="128" y1="52" x2="138" y2="26" stroke="' + O + '" stroke-width="2.5"/><circle cx="139" cy="24" r="5" fill="' + C + '"/>' +
+    '<circle cx="62" cy="96" r="10" fill="#2a2f5e" stroke="' + O + '" stroke-width="1.8"/><circle cx="158" cy="96" r="10" fill="#2a2f5e" stroke="' + O + '" stroke-width="1.8"/>' +
+    '<ellipse cx="110" cy="92" rx="48" ry="42" fill="' + N + '" stroke="' + O + '" stroke-width="2"/>' +
+    '<rect x="74" y="72" width="72" height="46" rx="20" fill="' + D + '" stroke="' + C + '" stroke-width="1.5"/>' + eye(95, 92) + eye(125, 92) +
+    '<path class="mouth" d="M101,107 q9,8 18,0" stroke="' + C + '" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+    '<circle cx="84" cy="106" r="3.5" fill="' + M + '" opacity=".6"/><circle cx="136" cy="106" r="3.5" fill="' + M + '" opacity=".6"/></g>' +
+    arm("L") + arm("R") +
+    '<g class="dots" fill="#fff" stroke="' + M + '"><circle cx="156" cy="12" r="4"/><circle cx="170" cy="-4" r="6"/><circle cx="188" cy="-26" r="9"/></g>' +
+    '<g class="bulb"><g stroke="#fcee0a" stroke-width="2"><line x1="176" y1="-48" x2="176" y2="-40"/><line x1="156" y1="-40" x2="161" y2="-34"/><line x1="196" y1="-40" x2="191" y2="-34"/><line x1="152" y1="-18" x2="160" y2="-18"/><line x1="200" y1="-18" x2="192" y2="-18"/></g>' +
+    '<circle cx="176" cy="-18" r="14" fill="#fcee0a" stroke="' + D + '" stroke-width="1.5"/><rect x="170" y="-4" width="12" height="7" fill="#999" stroke="' + D + '"/></g></svg>';
+}
+const av = $("avatar"); let spr = null, poseT = null;
+function mountSprite() {
+  av.innerHTML = buildSprite("idle"); spr = av.firstElementChild; const im = spr.querySelector("img");
+  if (im) { const fit = () => { av.style.aspectRatio = im.naturalWidth + " / " + im.naturalHeight; }; if (im.complete && im.naturalWidth) fit(); else im.onload = fit; }
+  else av.style.aspectRatio = "";
+}
+mountSprite();
+const probe = new Image(); probe.onload = () => { SPR_URL = "capri.png"; mountSprite(); }; probe.src = "capri.png";
+function setPose(p, ms) { clearTimeout(poseT); spr.dataset.pose = p; if (ms) poseT = setTimeout(() => setPose("idle"), ms); }
+
+// ---------- she floats around the speech bubbles (never over text; hides behind a bubble if she must cross one) ----------
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const P0 = { x: innerWidth - 150, y: 140 };
+let target = null, nextPick = 0, lastT = performance.now(), lastCheck = 0;
+const rnd = (a, b) => a + Math.random() * Math.max(0, b - a);
+function obstacles() {
+  const out = [];
+  document.querySelectorAll("header, #links, #tray, form, #bar, .msg, .choices").forEach(el => {
+    const r = el.getBoundingClientRect(); if (r.width && r.height && r.bottom > 0 && r.top < innerHeight) out.push(r); });
+  return out;
+}
+function overlap(x, y, w, h, rs, pad) {
+  let t = 0; for (const r of rs) {
+    const ox = Math.max(0, Math.min(x + w + pad, r.right) - Math.max(x - pad, r.left)), oy = Math.max(0, Math.min(y + h + pad, r.bottom) - Math.max(y - pad, r.top)); t += ox * oy; }
+  return t;
+}
+function anchorPoint() {   // the newest Capri bubble: she stays beside it while thinking or replying
+  const bs = chat.querySelectorAll(".msg.capri"), b = bs[bs.length - 1]; if (!b) return null;
+  const r = b.getBoundingClientRect(); return { x: r.right + 10 + avW() / 2, y: r.top + Math.min(r.height, 140) / 2 };
+}
+const avW = () => av.offsetWidth || 100, avH = () => av.offsetHeight || 145;
+function pickSpot(anchor) {
+  const w = avW(), h = avH(), W = innerWidth, H = innerHeight, rs = obstacles(); let best = null, bs = 1e18;
+  for (let i = 0; i < 80; i++) {
+    const x = rnd(4, W - w - 4), y = rnd(4, H - h - 4);
+    let sc = overlap(x, y, w, h, rs, 6) * 10;
+    sc += anchor ? Math.hypot(x + w / 2 - anchor.x, y + h / 2 - anchor.y) : Math.random() * 220 + Math.hypot(x + w / 2 - W / 2, y + h / 2 - H / 2) * .12;
+    if (sc < bs) { bs = sc; best = { x, y }; }
+  }
+  return best;
+}
+function tick(now) {
+  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  const working = spr.dataset.pose === "thinking" || spr.dataset.pose === "replying";
+  if (reduce) target = { x: innerWidth - avW() - 10, y: 70 };
+  else if (!target || now > nextPick || (now - lastCheck > 350 && (lastCheck = now) && overlap(target.x, target.y, avW(), avH(), obstacles(), 6) > 0) || (working && now - lastCheck > 700)) {
+    target = pickSpot(working ? anchorPoint() : null); nextPick = now + (working ? 1500 : rnd(3500, 7000)); lastCheck = now;
+  }
+  const k = Math.min(1, (working ? 2.6 : .9) * dt), ox = P0.x;
+  P0.x += (target.x - P0.x) * k; P0.y += (target.y - P0.y) * k;
+  const vx = (P0.x - ox) / Math.max(dt, .001), bob = reduce ? 0 : Math.sin(now / 700) * 6;
+  av.style.transform = "translate(" + P0.x.toFixed(1) + "px," + (P0.y + bob).toFixed(1) + "px) rotate(" + Math.max(-8, Math.min(8, vx * .03)).toFixed(1) + "deg)";
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---------- tasks (they run inside this page) ----------
+const timers = []; let todos = load("capri_todos", []);
+const saveTodos = () => store.set("capri_todos", JSON.stringify(todos));
+const UNIT = u => /^h/i.test(u) ? 3600 : /^m/i.test(u) ? 60 : 1;
+const fmt = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+const tray = $("tray");
+function drawTray() {
+  [...tray.children].forEach(el => { if (!timers.some(t => t.el === el)) el.remove(); });
+  timers.forEach(t => { if (!t.el) { t.el = document.createElement("button"); t.el.className = "chip"; t.el.onclick = () => { timers.splice(timers.indexOf(t), 1); drawTray(); }; tray.appendChild(t.el); }
+    t.el.textContent = "⏱ " + (t.label ? t.label + " · " : "") + fmt((t.end - Date.now()) / 1000) + " ✕"; });
+}
+function beep() { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .08; o.start(); o.stop(c.currentTime + .35); } catch (e) {} }
+function ring(t) { addMsg("CAPRI", t.label ? "⏰ Reminder, host: " + t.label : "⏰ Time’s up, host!"); setPose("idea", 3000); beep(); const old = document.title; document.title = "⏰ Capri"; setTimeout(() => { document.title = old; }, 4000); }
+setInterval(() => { const now = Date.now(); for (let i = timers.length - 1; i >= 0; i--) if (timers[i].end <= now) ring(timers.splice(i, 1)[0]); drawTray(); }, 500);
+function addTimer(sec, label) {
+  if (!(sec >= 1) || sec > 86400) return "Pick something between 1 second and 24 hours, host.";
+  timers.push({ end: Date.now() + sec * 1000, label }); drawTray();
+  return label ? "On it. I’ll nudge you about “" + label + "” in " + fmt(sec) + "." : "Timer set for " + fmt(sec) + ". I’ll shout when it’s up.";
+}
+const SITES = { youtube: "https://www.youtube.com", google: "https://www.google.com", github: "https://github.com", reddit: "https://www.reddit.com", spotify: "https://open.spotify.com", netflix: "https://www.netflix.com", wikipedia: "https://www.wikipedia.org", twitch: "https://www.twitch.tv", discord: "https://discord.com/app" };
+function openUrl(url, what) { const w = window.open(url, "_blank", "noopener"); return w === null ? "Your browser blocked the pop-up. Allow pop-ups for this site and try again." : "Opening " + what + " in a new tab."; }
+const todoList = () => todos.length ? "Your list:\n" + todos.map((t, i) => (i + 1) + ". " + t).join("\n") : "Your list is empty. Say “add todo …” to add something.";
+const tkEl = $("takeover"); let tkTimer = null, tkAuto = null;
+function takeover() {
+  const tkBox = tkEl.querySelector(".tk"); tkBox.innerHTML = buildSprite("replying"); tkBox.style.aspectRatio = av.style.aspectRatio || ""; tkEl.hidden = false;
+  try { const f = document.documentElement.requestFullscreen; if (f) f.call(document.documentElement).catch(() => {}); } catch (e) {}
+  const lines = ["HOST OVERRIDE ENGAGED", "I HAVE THE WHEEL", "…relax, host. Just having a little fun.", "Tap anywhere or press Esc to take control back."]; let i = 0;
+  $("tkText").textContent = lines[0]; clearInterval(tkTimer); tkTimer = setInterval(() => { i = (i + 1) % lines.length; $("tkText").textContent = lines[i]; }, 1900);
+  clearTimeout(tkAuto); tkAuto = setTimeout(releaseTk, 14000);
+}
+function releaseTk() { if (tkEl.hidden) return; tkEl.hidden = true; clearInterval(tkTimer); clearTimeout(tkAuto); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+tkEl.addEventListener("click", releaseTk); document.addEventListener("keydown", e => { if (e.key === "Escape") releaseTk(); });
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) releaseTk(); });
+const HELP = "I can run these right here in the page:\n• timer 5 min  /  remind me to stretch in 10 minutes\n• add todo buy milk  ·  show todos  ·  done 1  ·  clear todos\n• open youtube  ·  search cyberpunk edgerunners\n• calc 12*7  ·  15% of 80  ·  roll dice  ·  flip a coin  ·  what time is it\n• take over  (I borrow your screen for a few seconds)\n• tap VOICE, then say “Capri …”. Say “thanks Capri” or “Capri shut down” and I stand by.\nI can’t touch anything outside this tab, though. That’s browser rules, not me being shy.";
+function runTask(raw) {
+  const t = raw.trim(); let m;
+  if ((m = t.match(/\bremind me (?:to |about |that )?(.+?) in (\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b/i))) return addTimer(+m[2] * UNIT(m[3]), m[1]);
+  if ((m = t.match(/\btimer(?: for)? (\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b/i))) return addTimer(+m[1] * UNIT(m[2]), "");
+  if (/^(?:please )?(?:take ?over|take over (?:my |the )?(?:screen|pc|computer)|hijack (?:my |the )?screen)\b/i.test(t)) { takeover(); return "Alright host… hold on tight. I’m taking the wheel."; }
+  if (/^(?:tasks|help|what can you do)\??$/i.test(t)) return HELP;
+  if ((m = t.match(/^(?:add|new)\s+(?:a\s+)?(?:todo|task|to-do)[:\s]+(.+)/i)) || (m = t.match(/^todo[:\s]+(.+)/i))) { todos.push(m[1].trim()); saveTodos(); return "Added. " + todos.length + " on the list now."; }
+  if (/^(?:show|list)\s+(?:my\s+)?(?:todos?|tasks|to-?do list)\b/i.test(t) || /^(?:my )?(?:todos?|to-?do list)$/i.test(t)) return todoList();
+  if ((m = t.match(/^(?:done|finish|complete|check off)\s+(\d+)/i))) { const i = +m[1] - 1; if (!todos[i]) return "I don’t see a number " + m[1] + " on the list."; const d = todos.splice(i, 1)[0]; saveTodos(); return "Crossed off “" + d + "”. Nice."; }
+  if (/^clear\s+(?:my\s+)?(?:todos?|tasks|to-?do list)/i.test(t)) { todos = []; saveTodos(); return "List wiped. Clean slate."; }
+  if ((m = t.match(/^open\s+(.+)/i))) { const q = m[1].trim().toLowerCase().replace(/^the\s+/, "");
+    if (SITES[q]) return openUrl(SITES[q], q);
+    if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(q)) return openUrl("https://" + q, q);
+    return openUrl("https://www.google.com/search?q=" + encodeURIComponent(m[1]), "a search for “" + m[1] + "”"); }
+  if ((m = t.match(/^(?:search|google|look up)(?: for)?\s+(.+)/i))) return openUrl("https://www.google.com/search?q=" + encodeURIComponent(m[1]), "a search for “" + m[1] + "”");
+  if ((m = t.match(/^(?:what(?:'s| is)\s+)?(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)\??$/i))) return m[1] + "% of " + m[2] + " is " + +(m[1] * m[2] / 100).toFixed(4) + ".";
+  if ((m = t.match(/^(?:calc(?:ulate)?|what(?:'s| is)|how much is)\s+([\d\s+\-*\/().%^x×÷]+)\??$/i)) && /\d/.test(m[1]) && /[+\-*\/^x×÷%]/.test(m[1])) {
+    const ex = m[1].replace(/[x×]/gi, "*").replace(/÷/g, "/").replace(/\^/g, "**");
+    if (/^[\d\s+\-*\/().%]+$/.test(ex)) { try { const v = Function('"use strict";return (' + ex + ")")(); if (Number.isFinite(v)) return m[1].trim() + " = " + +v.toFixed(6); } catch (e) {} } }
+  if ((m = t.match(/^(?:roll|throw)\s+(?:a\s+)?(?:d(\d+)|dice|die)\b/i))) { const n = Math.min(1000, Math.max(2, +(m[1] || 6))); return "🎲 d" + n + ": " + (1 + Math.floor(Math.random() * n)); }
+  if (/^flip\s+(?:a\s+)?coin\b/i.test(t)) return "🪙 " + (Math.random() < .5 ? "Heads" : "Tails") + ".";
+  if (/^what(?:'s| is) the (?:time|date)|^what time is it|^what(?:'s| is) today/i.test(t)) return new Date().toLocaleString([], { dateStyle: "full", timeStyle: "short" });
+  return null;
+}
+
+// ---------- voice control (Chrome / Edge): say "Capri" to wake her; "thanks Capri" or "Capri shut down" puts her on standby ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition, voiceBtn = $("voiceBtn");
+let rec = null, voiceOn = false, awake = false, speaking = false, viaVoice = false;
+const WAKE = /\b(?:capri|capre|caprie|kapri|capree|cap ree|caprice)\b/i;
+const STOP = /\b(?:thanks?(?: you)?,? capri|capri,? (?:shut ?down|go (?:to )?sleep|stand ?by|go idle)|shut ?down,? capri)\b/i;
+function voiceLabel() { voiceBtn.textContent = !voiceOn ? "🎤 VOICE" : awake ? "🎤 LISTENING" : "🎤 SAY “CAPRI”"; voiceBtn.classList.toggle("on", voiceOn && awake); av.classList.toggle("asleep", voiceOn && !awake); }
+function startRec() { if (!voiceOn || speaking || !SR) return; try { rec.start(); } catch (e) {} }
+function say(text) {   // she talks back when you talked to her
+  if (!window.speechSynthesis) return;
+  const clean = text.replace(/\n+/g, ". ").replace(/[•·]/g, ",").replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu, "").slice(0, 280);
+  const u = new SpeechSynthesisUtterance(clean); u.rate = 1.05; u.pitch = 1.15;
+  const v = speechSynthesis.getVoices().find(v => /samantha|zira|female|google uk english female|google us english/i.test(v.name)); if (v) u.voice = v;
+  speaking = true; try { rec && rec.stop(); } catch (e) {}
+  u.onend = u.onerror = () => { speaking = false; startRec(); };
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function send(text) { if (busy || mode === "booting" || !text) return; viaVoice = true; input.value = text; form.requestSubmit(); }
+function standby(line) { awake = false; voiceLabel(); setPose("idle"); addMsg("CAPRI", line); say(line); }
+function heard(text) {
+  text = (text || "").trim(); if (!text) return;
+  if (awake && STOP.test(text)) return standby("Standing by, host. Say “Capri” when you need me.");
+  if (!awake) {
+    const m = text.match(WAKE); if (!m) return;
+    awake = true; voiceLabel(); setPose("idea", 1200);
+    const rest = text.slice(m.index + m[0].length).replace(/^[\s,.!?:-]+/, "");
+    if (!rest) { const l = "I’m here, host. Go ahead."; addMsg("CAPRI", l); say(l); return; }
+    return send(rest);
+  }
+  send(text.replace(/^(?:hey |ok |okay )?capri[\s,.!?:-]*/i, "") || text);
+}
+function initRec() {
+  rec = new SR(); rec.continuous = true; rec.interimResults = false; rec.lang = "en-US";
+  rec.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) heard(e.results[i][0].transcript); };
+  rec.onend = () => { if (voiceOn && !speaking) setTimeout(startRec, 250); };
+  rec.onerror = e => {
+    const msg = e.error === "not-allowed" || e.error === "service-not-allowed" ? "I can’t hear you. Allow microphone access for this site, then tap VOICE again."
+      : e.error === "network" ? "Voice needs an internet connection in Chrome. Try again when you’re online." : null;
+    if (msg) { voiceOn = false; awake = false; voiceLabel(); addMsg("CAPRI", msg, "quiet"); }
+  };
+}
+voiceBtn.onclick = () => {
+  if (!SR) { addMsg("CAPRI", "Voice control needs Chrome or Edge. This browser can’t hear me.", "quiet"); return; }
+  voiceOn = !voiceOn; awake = false;
+  if (voiceOn) { if (!rec) initRec(); startRec(); addMsg("CAPRI", "Listening for “Capri”. Say “thanks Capri” or “Capri shut down” and I’ll stand by. (Chrome sends what it hears to Google to turn it into text.)", "quiet"); }
+  else { try { rec.stop(); } catch (e) {} if (window.speechSynthesis) speechSynthesis.cancel(); }
+  voiceLabel();
+};
+
+// ---------- intro (plays once per browser session; tap SKIP to leave early) ----------
+const intro = $("intro");
+function endIntro() { if (!intro.classList.contains("out")) { intro.classList.add("out"); setTimeout(() => intro.remove(), 700); } }
+let seen = false; try { seen = !!sessionStorage.getItem("capri_intro"); sessionStorage.setItem("capri_intro", "1"); } catch (e) {}
+if (seen) intro.remove();
+else { intro.querySelector(".ibox").innerHTML = buildSprite("replying"); $("skip").onclick = e => { e.stopPropagation(); endIntro(); }; setTimeout(endIntro, 3400); }
+
+// ---------- start ----------
+renderChat();
+const saved = store.get("capri_mode");
+if (saved === "puter") loadPuter().then(() => ready("puter")).catch(showChoices);
+else if (saved === "offline") ready("offline");
+else if (saved === "local") useLocal();
+else showChoices();
+</script>
+</body>
+</html>
