@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace CapriDesktop
+namespace capri
 {
     // The local speech model she talks with when there's no ElevenLabs key. Capri and its installer both build this file,
     // so the installer always fetches the same pack Capri looks for.
